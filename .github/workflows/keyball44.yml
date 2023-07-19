@@ -27,12 +27,6 @@ jobs:
     - run: qmk compile -j 4 -kb keyball/keyball44 -km mykeymap
       continue-on-error: true
 
-    - run: qmk compile -j 4 -kb keyball/keyball44 -km default
-
-    - run: qmk compile -j 4 -kb keyball/keyball44 -km test
-
-    - run: qmk compile -j 4 -kb keyball/keyball44 -km via
-
     - name: Archive firmwares
       uses: actions/upload-artifact@v3
       with:
