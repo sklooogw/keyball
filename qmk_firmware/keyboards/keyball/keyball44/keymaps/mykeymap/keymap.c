@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////////////////////////////
 
 enum custom_keycodes {
-    KC_MY_BTN1 = KEYBALL_SAFE_RANGE,
+    KC_MY_BTN1 = SAFE_RANGE,
     KC_MY_BTN2,
     KC_MY_BTN3,
     KC_MY_SCR,
@@ -61,7 +61,7 @@ uint16_t click_timer;       // タイマー。状態に応じて時間で判定�
 // uint16_t to_clickable_time = 50;   // この秒数(千分の一秒)、WAITING状態ならクリックレイヤーが有効になる。  For this number of seconds (milliseconds), if in WAITING state, the click layer is activated.
 uint16_t to_reset_time = 1000; // この秒数(千分の一秒)、CLICKABLE状態ならクリックレイヤーが無効になる。 For this number of seconds (milliseconds), the click layer is disabled if in CLICKABLE state.
 
-const uint16_t click_layer = 6;   // マウス入力が可能になった際に有効になるレイヤー。Layers enabled when mouse input is enabled
+const uint16_t click_layer = 8;   // マウス入力が可能になった際に有効になるレイヤー。Layers enabled when mouse input is enabled
 
 int16_t scroll_v_mouse_interval_counter;   // 垂直スクロールの入力をカウントする。　Counting Vertical Scroll Inputs
 int16_t scroll_h_mouse_interval_counter;   // 水平スクロールの入力をカウントする。  Counts horizontal scrolling inputs.
@@ -74,11 +74,15 @@ int16_t after_click_lock_movement = 0;      // クリック入力後の移動量
 int16_t mouse_record_threshold = 30;    // ポインターの動きを一時的に記録するフレーム数。 Number of frames in which the pointer movement is temporarily recorded.
 int16_t mouse_move_count_ratio = 5;     // ポインターの動きを再生する際の移動フレームの係数。 The coefficient of the moving frame when replaying the pointer movement.
 
+const uint16_t ignore_disable_mouse_layer_keys[] = {KC_LGUI, KC_LCTL};   // この配列で指定されたキーはマウスレイヤー中に押下してもマウスレイヤーを解除しない
+
 int16_t mouse_movement;
 
 void eeconfig_init_user(void) {
     user_config.raw = 0;
-    user_config.to_clickable_movement = 50; // user_config.to_clickable_time = 10;
+    user_config.to_clickable_movement = 50;
+    user_config.mouse_scroll_v_reverse = false;
+    user_config.mouse_scroll_h_reverse = false;
     eeconfig_update_user(user_config.raw);
 }
 
@@ -146,8 +150,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 // ビットANDは演算子の左辺と右辺の同じ位置にあるビットを比較して、両方のビットが共に「1」の場合だけ「1」にします。
                 // Bit AND compares the bits in the same position on the left and right sides of the operator and sets them to "1" only if both bits are "1" together.
                 currentReport.buttons &= ~btn;
-                enable_click_layer();
             }
+
+            enable_click_layer();
 
             pointing_device_set_report(currentReport);
             pointing_device_send();
@@ -203,6 +208,22 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
          default:
             if  (record->event.pressed) {
+                
+                if (state == CLICKING || state == SCROLLING)
+                {
+                    enable_click_layer();
+                    return false;
+                }
+                
+                for (int i = 0; i < sizeof(ignore_disable_mouse_layer_keys) / sizeof(ignore_disable_mouse_layer_keys[0]); i++)
+                {
+                    if (keycode == ignore_disable_mouse_layer_keys[i])
+                    {
+                        enable_click_layer();
+                        return true;
+                    }
+                }
+
                 disable_click_layer();
             }
         
