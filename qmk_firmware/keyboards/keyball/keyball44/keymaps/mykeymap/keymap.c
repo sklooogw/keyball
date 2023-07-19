@@ -48,6 +48,8 @@ typedef union {
   struct {
     // int16_t to_clickable_time; // // この秒数(千分の一秒)、WAITING状態ならクリックレイヤーが有効になる。  For this number of seconds (milliseconds), if in WAITING state, the click layer is activated.
     int16_t to_clickable_movement;
+    bool mouse_scroll_v_reverse;
+    bool mouse_scroll_h_reverse;
   };
 } user_config_t;
 
